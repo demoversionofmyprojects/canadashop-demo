@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Canada Shop</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff; --ink:#111; --mute:#7a7a7a; --line:#e6e6e6; --soft:#f5f4f2;
+  --r:4px; /* гострі, але не бритва */
+  --gut:max(16px,calc((100% - 1200px)/2)); /* поле збоку, на десктопі центрує контент */
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 Manrope,system-ui,sans-serif;padding-bottom:90px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+h1,h2,.price,.brand{font-family:Unbounded,sans-serif}
+
+/* шапка */
+.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:2px solid var(--ink)}
+.bar{display:flex;align-items:center;gap:10px;padding:12px var(--gut)}
+.logo{display:flex;align-items:center;gap:8px;font:800 18px Unbounded;letter-spacing:-.02em;text-transform:uppercase}
+.logo svg{width:26px;height:26px;fill:var(--ink)}
+.cart-btn{margin-left:auto;position:relative;width:40px;height:40px;border:2px solid var(--ink);border-radius:var(--r);display:grid;place-items:center}
+.cart-btn svg{width:20px;height:20px}
+.badge{position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;padding:0 5px;background:var(--ink);color:#fff;font:800 11px/20px Manrope;border-radius:var(--r);text-align:center}
+.badge:empty{display:none}
+.search{margin:0 var(--gut) 12px;display:flex;border:2px solid var(--ink);border-radius:var(--r)}
+.search input{flex:1;border:0;outline:0;padding:10px 12px;font:inherit;background:none;min-width:0}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:0 var(--gut) 12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:7px 12px;border:1.5px solid var(--line);border-radius:var(--r);font-weight:600;font-size:13px;white-space:nowrap}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* інтро: типографіка замість банера */
+.intro{margin:18px var(--gut) 20px;position:relative;overflow:hidden}
+.meta{display:flex;justify-content:space-between;font:800 10px Manrope;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);border-bottom:1px solid var(--ink);padding-bottom:8px}
+.intro h1{position:relative;z-index:1;font-size:40px;line-height:.95;letter-spacing:-.03em;text-transform:uppercase;margin:16px 0 14px}
+.intro h1 em{font-style:normal;color:transparent;-webkit-text-stroke:1.5px var(--ink)}
+.intro .big{position:absolute;right:-18px;top:22px;width:150px;height:150px;fill:none;stroke:var(--ink);stroke-width:1;opacity:.35;animation:spin 60s linear infinite}
+.intro p{position:relative;z-index:1;font-size:13px;color:var(--mute);max-width:62%}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.intro .big{animation:none}}
+
+/* сітка */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 var(--gut)}
+.card{text-align:left;display:flex;flex-direction:column;gap:6px}
+.ph{aspect-ratio:3/4;border-radius:var(--r);position:relative;overflow:hidden;display:grid;place-items:center;border:1px solid var(--line)}
+.ph .mark{width:46%;opacity:.12}
+.ph .cat{position:absolute;left:8px;bottom:8px;font:800 10px Manrope;text-transform:uppercase;letter-spacing:.08em;opacity:.55}
+.tag{position:absolute;top:8px;left:8px;background:var(--bg);color:var(--ink);font:800 10px Manrope;padding:3px 6px;border-radius:2px;text-transform:uppercase}
+.brand{font-size:11px;font-weight:600;color:var(--mute);text-transform:uppercase}
+.name{font-weight:600;font-size:14px;line-height:1.25}
+.price{font-size:14px;font-weight:800}
+.price s{color:var(--mute);font-weight:600;font-size:11px;margin-left:6px}
+.empty{grid-column:1/-1;text-align:center;color:var(--mute);padding:40px 0}
+
+/* шторки */
+.sheet{position:fixed;inset:0;z-index:10;background:rgba(17,17,17,.45);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
+.sheet.open{opacity:1;pointer-events:auto}
+.panel{background:var(--bg);width:100%;max-height:90vh;overflow-y:auto;border-top:3px solid var(--ink);border-radius:var(--r) var(--r) 0 0;padding:16px 16px 100px;transform:translateY(30px);transition:transform .25s}
+.sheet.open .panel{transform:none}
+.close{float:right;width:34px;height:34px;border:2px solid var(--ink);border-radius:var(--r);font-size:18px;line-height:1}
+.panel .ph{aspect-ratio:4/3;margin:12px 0}
+.panel h2{font-size:18px;line-height:1.2;margin:4px 0 8px}
+.desc{color:#444;margin:10px 0 16px}
+.label{font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.sizes{display:flex;flex-wrap:wrap;gap:6px}
+.size{min-width:46px;padding:9px 10px;border:2px solid var(--line);border-radius:var(--r);font-weight:800}
+.size.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.btn{display:block;width:100%;padding:14px;background:var(--ink);color:#fff;font:800 14px Unbounded;text-transform:uppercase;border-radius:var(--r);margin-top:18px}
+.btn:active{background:#333}
+.btn:disabled{background:#ccc}
+
+/* кошик */
+.row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.row .ph{width:56px;aspect-ratio:1;margin:0;flex:none}
+.row .ph .mark{width:60%}
+.row .info{flex:1;min-width:0}
+.qty{display:flex;align-items:center;border:2px solid var(--ink);border-radius:var(--r)}
+.qty button{width:28px;height:28px;font-weight:800}
+.qty span{min-width:20px;text-align:center;font-weight:800}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin-top:16px;font-weight:800}
+.total .price{font-size:20px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:var(--r);font-weight:600;opacity:0;transition:.2s;z-index:20;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* планшет і десктоп */
+@media (min-width:768px){
+  .grid{grid-template-columns:repeat(3,1fr);gap:24px 16px}
+  .intro h1{font-size:72px}
+  .intro .big{width:280px;height:280px;right:0;top:10px}
+  .intro p{font-size:15px;max-width:420px}
+  .sheet{align-items:center;justify-content:center}
+  .panel{width:520px;max-height:85vh;border-radius:var(--r);padding-bottom:24px}
+}
+@media (min-width:1024px){
+  .grid{grid-template-columns:repeat(4,1fr)}
+  .intro h1{font-size:96px}
+  .search{max-width:520px}
+}
+@media (hover:hover){
+  .card .ph{transition:border-color .15s}
+  .card:hover .ph{border-color:var(--ink)}
+  .chip:hover{border-color:var(--ink)}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="leaf" viewBox="0 0 100 100"><path d="M50 4 42 20l-9-5 4 24-12-12-3 8-14-3 5 14-7 4 24 19-3 9 21-3v21h4V75l21 3-3-9 24-19-7-4 5-14-14 3-3-8-12 12 4-24-9 5z"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="bar">
+    <div class="logo"><svg><use href="#leaf"/></svg>Canada Shop</div>
+    <button class="cart-btn" id="cartBtn" aria-label="Кошик">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16l-1.5 13h-13z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>
+      <span class="badge" id="badge"></span>
+    </button>
+  </div>
+  <label class="search"><input id="q" type="search" placeholder="Пошук: бренд, річ…" autocomplete="off"></label>
+  <nav class="chips" id="chips"></nav>
+</header>
+
+<section class="intro">
+  <div class="meta"><span>45°25′N 75°41′W</span><span>Зима ’26</span></div>
+  <svg class="big" viewBox="0 0 100 100"><use href="#leaf"/></svg>
+  <h1>Тепло<br><em>з півночі</em></h1>
+  <p>Якість, яку відчуваєш з першого дотику. Кожну річ перевіряємо руками перед відправкою.</p>
+</section>
+
+<main class="grid" id="grid"></main>
+
+<div class="sheet" id="itemSheet"><div class="panel" id="itemPanel"></div></div>
+<div class="sheet" id="cartSheet"><div class="panel" id="cartPanel"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// shortcut: демо-дані зашиті тут; коли буде бекенд/таблиця — тягнути fetch'ем
+const CATS = ['Усе','Куртки','Худі','Футболки','Штани','Взуття','Аксесуари','Смаколики'];
+const P = [
+  {id:1,brand:'Canada Goose',name:'Парка Expedition',cat:'Куртки',price:38900,old:42500,sizes:['S','M','L','XL'],bg:'#1f2a24',fg:'#fff',tag:'Хіт',desc:'Легендарна парка для морозу до −30°. Пух, хутряна опушка, 11 кишень.'},
+  {id:2,brand:"Arc'teryx",name:'Beta LT Jacket',cat:'Куртки',price:21400,sizes:['S','M','L'],bg:'#c9d4cf',fg:'#111',desc:'Мембрана Gore-Tex, вага 395 г. Для гір і міста.'},
+  {id:3,brand:'Roots',name:'Худі Cooper Beaver',cat:'Худі',price:4200,sizes:['XS','S','M','L','XL'],bg:'#5b4a3f',fg:'#fff',tag:'New',desc:'Той самий бобер на грудях. Щільний фліс, канадська класика з 1973.'},
+  {id:4,brand:'Lululemon',name:'Худі Scuba Half-Zip',cat:'Худі',price:5600,sizes:['XS','S','M','L'],bg:'#e9e3da',fg:'#111',desc:'Мʼякий бавовняний фліс, оверсайз крій, кишеня-кенгуру.'},
+  {id:5,brand:'Roots',name:'Футболка Maple Logo',cat:'Футболки',price:1450,old:1800,sizes:['S','M','L','XL'],bg:'#f4f1ec',fg:'#111',tag:'−20%',desc:'100% органічна бавовна, принт кленового листа.'},
+  {id:6,brand:'Carhartt WIP',name:'Футболка Pocket',cat:'Футболки',price:1650,sizes:['S','M','L','XL','XXL'],bg:'#b7864a',fg:'#fff',desc:'Щільний трикотаж 205 г/м², нагрудна кишеня.'},
+  {id:7,brand:"Levi's",name:'Джинси 501 Original',cat:'Штани',price:3900,sizes:['30','31','32','33','34','36'],bg:'#3b5677',fg:'#fff',desc:'Прямий крій, ґудзики, денім 100% бавовна.'},
+  {id:8,brand:'Carhartt WIP',name:'Штани Double Knee',cat:'Штани',price:4700,sizes:['30','32','34','36'],bg:'#3d3a2f',fg:'#fff',tag:'Хіт',desc:'Подвійні коліна, міцний canvas. Робочий крій.'},
+  {id:9,brand:'Timberland',name:'Черевики 6-Inch Premium',cat:'Взуття',price:7900,sizes:['40','41','42','43','44','45'],bg:'#d9a441',fg:'#111',desc:'Водонепроникна нубукова шкіра, підошва з протектором.'},
+  {id:10,brand:'Sorel',name:'Чоботи Caribou',cat:'Взуття',price:8400,sizes:['39','40','41','42','43','44'],bg:'#4a2e20',fg:'#fff',desc:'Канадські зимові чоботи, вкладиш з повсті, до −40°.'},
+  {id:11,brand:'Herschel',name:'Рюкзак Little America',cat:'Аксесуари',price:3600,sizes:['25 л'],bg:'#1c1c1c',fg:'#fff',desc:'Канадський бренд з Ванкувера. Відділ під ноутбук 15".'},
+  {id:12,brand:'Canada Goose',name:'Шапка Arctic Toque',cat:'Аксесуари',price:3200,sizes:['One size'],bg:'#2b2b2b',fg:'#fff',tag:'New',desc:'Мериносова вовна, класичний відворот з логотипом.'},
+  {id:13,brand:'Maple Joe',name:'Кленовий сироп 250 мл',cat:'Смаколики',price:520,sizes:['250 мл'],bg:'#f2e3c6',fg:'#7a3e10',desc:'100% чистий сироп з Квебеку, Grade A Amber.'},
+  {id:14,brand:'Canada Shop',name:'Кленове печиво',cat:'Смаколики',price:290,sizes:['300 г'],bg:'#efe9e1',fg:'#5a4636',desc:'Хрустке печиво з кленовим кремом. Те саме, з канадських полиць.'},
+];
+
+const tg = window.Telegram?.WebApp;
+if (tg?.initData !== undefined) { tg.ready(); tg.expand(); tg.setHeaderColor?.('#ffffff'); tg.setBackgroundColor?.('#ffffff'); }
+const haptic = t => tg?.HapticFeedback?.impactOccurred?.(t || 'light');
+
+const $ = id => document.getElementById(id);
+const uah = n => n.toLocaleString('uk-UA').replace(/,/g,' ') + ' ₴';
+const esc = s => String(s).replace(/[&<>"']/g, c => '&#'+c.charCodeAt(0)+';');
+let cat = 'Усе', cart = [];
+try { cart = JSON.parse(localStorage.getItem('cs_cart')) || []; } catch {}
+const save = () => { try { localStorage.setItem('cs_cart', JSON.stringify(cart)); } catch {} };
+
+const ph = (p, inner = '') => `<div class="ph" style="background:${p.bg};color:${p.fg}">
+  <svg class="mark" viewBox="0 0 100 100" fill="currentColor"><use href="#leaf"/></svg>
+  ${p.tag ? `<span class="tag">${esc(p.tag)}</span>` : ''}${inner}</div>`;
+
+$('chips').innerHTML = CATS.map(c => `<button class="chip${c===cat?' on':''}" data-c="${c}">${c}</button>`).join('');
+$('chips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return;
+  cat = b.dataset.c; haptic();
+  document.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b)); render(); };
+$('q').oninput = render;
+
+function render() {
+  const q = $('q').value.trim().toLowerCase();
+  const list = P.filter(p => (cat === 'Усе' || p.cat === cat) && (p.brand + ' ' + p.name).toLowerCase().includes(q));
+  $('grid').innerHTML = list.length ? list.map(p => `<button class="card" data-id="${p.id}">
+      ${ph(p, `<span class="cat">${p.cat}</span>`)}
+      <span class="brand">${esc(p.brand)}</span>
+      <span class="name">${esc(p.name)}</span>
+      <span class="price">${uah(p.price)}${p.old ? `<s>${uah(p.old)}</s>` : ''}</span>
+    </button>`).join('') : '<p class="empty">Нічого не знайшли</p>';
+}
+$('grid').onclick = e => { const c = e.target.closest('.card'); if (c) openItem(+c.dataset.id); };
+
+// --- шторки + кнопка «назад» Telegram
+let openSheet = null;
+function show(el) { openSheet = el; el.classList.add('open'); tg?.BackButton?.show(); }
+function hide() { if (!openSheet) return; openSheet.classList.remove('open'); openSheet = null; tg?.BackButton?.hide(); }
+tg?.BackButton?.onClick(hide);
+document.querySelectorAll('.sheet').forEach(s => s.onclick = e => { if (e.target === s || e.target.closest('.close')) hide(); });
+
+function openItem(id) {
+  const p = P.find(x => x.id === id); let size = p.sizes.length === 1 ? p.sizes[0] : null;
+  $('itemPanel').innerHTML = `<button class="close" aria-label="Закрити">✕</button>
+    <span class="brand">${esc(p.brand)}</span>
+    <h2>${esc(p.name)}</h2>
+    <span class="price">${uah(p.price)}${p.old ? `<s>${uah(p.old)}</s>` : ''}</span>
+    ${ph(p)}
+    <p class="desc">${esc(p.desc)}</p>
+    <div class="label">Розмір</div>
+    <div class="sizes">${p.sizes.map(s => `<button class="size${s===size?' on':''}">${s}</button>`).join('')}</div>
+    <button class="btn" id="add" ${size ? '' : 'disabled'}>${size ? 'Додати в кошик' : 'Оберіть розмір'}</button>`;
+  $('itemPanel').querySelector('.sizes').onclick = e => { const b = e.target.closest('.size'); if (!b) return;
+    size = b.textContent; haptic();
+    $('itemPanel').querySelectorAll('.size').forEach(x => x.classList.toggle('on', x === b));
+    $('add').disabled = false; $('add').textContent = 'Додати в кошик'; };
+  $('add').onclick = () => {
+    const line = cart.find(l => l.id === id && l.size === size);
+    line ? line.qty++ : cart.push({ id, size, qty: 1 });
+    save(); updateBadge(); hide(); toast('Додано в кошик'); haptic('medium');
+  };
+  show($('itemSheet'));
+}
+
+// --- кошик
+const total = () => cart.reduce((s, l) => s + P.find(p => p.id === l.id).price * l.qty, 0);
+function updateBadge() { $('badge').textContent = cart.reduce((s, l) => s + l.qty, 0) || ''; }
+function renderCart() {
+  $('cartPanel').innerHTML = `<button class="close" aria-label="Закрити">✕</button><h2>Кошик</h2>` + (cart.length
+    ? cart.map((l, i) => { const p = P.find(x => x.id === l.id); return `<div class="row">${ph({ ...p, tag: '' })}
+        <div class="info"><div class="brand">${esc(p.brand)}</div><div class="name">${esc(p.name)}</div>
+        <div class="brand">Розмір: ${esc(l.size)}</div><div class="price">${uah(p.price)}</div></div>
+        <div class="qty"><button data-i="${i}" data-d="-1">−</button><span>${l.qty}</span><button data-i="${i}" data-d="1">+</button></div></div>`; }).join('')
+      + `<div class="total"><span>Разом</span><span class="price">${uah(total())}</span></div>
+         <button class="btn" id="order">Оформити замовлення</button>`
+    : '<p class="empty">Тут поки порожньо</p>');
+  const order = $('order');
+  if (order) order.onclick = checkout;
+}
+$('cartPanel').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return;
+  const l = cart[b.dataset.i]; l.qty += +b.dataset.d;
+  if (l.qty < 1) cart.splice(b.dataset.i, 1);
+  save(); updateBadge(); renderCart(); haptic(); };
+$('cartBtn').onclick = () => { renderCart(); show($('cartSheet')); };
+
+function checkout() {
+  const order = { items: cart, total: total() };
+  // shortcut: демо — sendData працює лише коли апп відкрито з reply-клавіатури бота; потім замінити на запит до бекенду
+  if (tg?.initData) { try { tg.sendData(JSON.stringify(order)); return; } catch {} }
+  cart = []; save(); updateBadge(); hide(); toast('Замовлення прийнято! Менеджер напише вам');
+}
+
+let tt;
+function toast(t) { $('toast').textContent = t; $('toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.remove('show'), 1800); }
+
+render(); updateBadge();
+</script>
+</body>
+</html>
